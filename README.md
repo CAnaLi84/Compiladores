@@ -1,13 +1,13 @@
-# Compilador en C
+# Compiler in C
 
 ## Ana Lilia Carballido Camacateco
 
-Este proyecto tiene como objetivo implementar un compilador con todas sus etapas utilizando el lenguaje **C**.
-El compilador desarrollado procesa el lenguaje creado con fines académicos pasando por las siguientes etapas:
+This project aims to implement a compiler with all its stages using the **C** programming language.
+The developed compiler processes a language created for academic purposes, going through the following stages:
 
-- Análisis léxico
-- Análisis sintáctico
-- Análisis semántico
+- Lexical analysis
+- Semantic analysis
+- Syntax analysis
 
 ---
-Para este proyecto se hará uso de la estrategia de ramas **GitHub Flow**.
+For this project, the **GitHub Flow** branching strategy will be used.
