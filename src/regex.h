@@ -2,29 +2,23 @@
 #define REGEX_H
 #include <stdbool.h>
 
-//Definition of regex and operators 
+/* Operator symbols*/
+
+#define OP_UNION '|'
+#define OP_CONCAT '.'
+#define OP_STAR '*'
+#define OP_PLUS '+'
+
+#define EPSILON_SYMBOL '\0'
+
+#define LEFT_PAREN '('
+#define RIGHT_PAREN ')'
 
 
-//Operators:
-/* Union symbol Ex: a|b*/
-#define op_union '|'
-/* Concatenation symbol Ex: a.b*/
-#define op_concatenation '.'
-/* Star symbol eX: a* */
-#define op_star '*'
-/* Plus symbol Ex: b+*/
-#define op_plus '+'
-
-/* Definition of epsilon symbol \epsilon */
-#define epsilon_symbol '\0'
-
-/*Left parenthesis symbol*/
-#define left_parenthesis '('
-
-/*Right parenthesis symbol*/
-#define right_parenthesis ')'
-
-
+/**
+ * @enum TokenType
+ * @brief Represents the different types of tokens in a regular expression.
+ */
 typedef enum {
     TOKEN_SYMBOL,
     TOKEN_UNION,
@@ -38,55 +32,81 @@ typedef enum {
 } TokenType;
 
 
+/**
+ * @struct Token
+ * @brief Represents a token extracted from a regular expression.
+ */
 typedef struct {
     TokenType type;
-    char value;   //for symbols
+    char value;  //for symbols
 } Token;
 
+/**
+ * @struct Regex
+ * @brief Opaque structure representing a parsed regular expression.
+ */
+typedef struct Regex Regex;
 
-TokenType get_token_type(char c) {
+/* ---------Utility functions*/
 
-    if (c >= 'a' && c <= 'z')
-        return TOKEN_SYMBOL;
+/**
+ * @brief Determines the token type corresponding to a character.
+ * @param c The input character.
+ * @return TokenType The type associated with the character.
+ */
+TokenType get_token_type(char c);
 
-    if (c >= '0' && c <= '9')
-        return TOKEN_SYMBOL;
+/**
+ * @brief Returns the precedence level of a given token type.
+ * -Higher values indicate higher precedence.
+ * @param t The token type.
+ * @return int The precedence value.
+ */
+int precedence(TokenType t);
 
-    if (c == '|')
-        return TOKEN_UNION;
+/* ---------Funtions for parsing pipeline*/
 
-    if (c == '.')
-        return TOKEN_CONCAT;
+/**
+ * @brief Validates the basic syntax of a regular expression string.
+ * This function checks for structural correctness such as balanced
+ * parentheses and valid operator placement.
+ * @param regex The input regular expression string.
+ * @return true If the regex is syntactically valid.
+ * @return false Otherwise.
+ */
+bool validate_regex(const char* regex);
 
-    if (c == '*')
-        return TOKEN_STAR;
+/**
+ * @brief Converts implicit concatenation into explicit concatenation.
+ * Memory for the returned string is dynamically allocated and must
+ * be freed by the caller.
+ * @param regex The input infix regular expression.
+ * @return char* A new string with explicit concatenation operators.
+ */
+char* implicit_to_explicit(const char* regex);
 
-    if (c == '+')
-        return TOKEN_PLUS;
+/**
+ * @brief Converts an infix regular expression into postfix notation
+ * using the Shunting Yard algorithm.
+ * The input must already contain explicit concatenation operators.
+ * Memory for the returned string is dynamically allocated and must
+ * be freed by the caller.
+ * @param input The explicit infix expression.
+ * @return char* The postfix representation.
+ */
+char* shunting_yard(const char* input);
 
-    if (c == '(')
-        return TOKEN_LPAREN;
-
-    if (c == ')')
-        return TOKEN_RPAREN;
-
-    if (c == '\0')   
-        return TOKEN_EPSILON;
-
-    return TOKEN_INVALID;
-}
-
-/*Define precedence*/
-int precedence(TokenType t) {
-    if (t == TOKEN_STAR || t == TOKEN_PLUS) return 3; 
-    if (t == TOKEN_CONCAT) return 2;
-    if (t == TOKEN_UNION) return 1; 
-    return 0;
-}
-
-
-bool validate_regex(const char* regex);   
-void insert_concatenation(const char* input, char* output);
-void shunting_yard(const char* input, char* output);
+/**
+ * @brief Parses a regular expression string into its internal representation.
+ * This function performs:
+ *      1. Validation
+ *      2. Implicit-to-explicit concatenation conversion
+ *      3. Infix-to-postfix conversion
+ *      4. Construction of the internal structure
+ * @param regex_str The input regular expression string.
+ * @return Regex* Pointer to the constructed Regex structure.
+ *         Returns NULL if parsing fails.
+ */
+Regex* parse_regex(const char* regex_str);
 
 #endif
