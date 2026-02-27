@@ -1,5 +1,6 @@
 #ifndef REGEX_H
 #define REGEX_H
+#include "nfa.h"
 #include <stdbool.h>
 
 /* Operator symbols*/
@@ -8,6 +9,7 @@
 #define OP_CONCAT '.'
 #define OP_STAR '*'
 #define OP_PLUS '+'
+#define OP_QUESTION '?'
 
 #define EPSILON_SYMBOL '\0'
 
@@ -25,10 +27,11 @@ typedef enum {
     TOKEN_CONCAT,
     TOKEN_STAR,
     TOKEN_PLUS,
+    TOKEN_QUESTION,
     TOKEN_LPAREN,
     TOKEN_RPAREN,
     TOKEN_EPSILON,
-    TOKEN_INVALID
+    TOKEN_INVALID,
 } TokenType;
 
 
@@ -46,8 +49,6 @@ typedef struct {
  * @brief Opaque structure representing a parsed regular expression.
  */
 typedef struct Regex Regex;
-
-/* ---------Utility functions*/
 
 /**
  * @brief Determines the token type corresponding to a character.
@@ -97,16 +98,11 @@ char* implicit_to_explicit(const char* regex);
 char* shunting_yard(const char* input);
 
 /**
- * @brief Parses a regular expression string into its internal representation.
- * This function performs:
- *      1. Validation
- *      2. Implicit-to-explicit concatenation conversion
- *      3. Infix-to-postfix conversion
- *      4. Construction of the internal structure
+ * @brief Parses a regular expression string and builds the corresponding NFA.
+ * 
  * @param regex_str The input regular expression string.
- * @return Regex* Pointer to the constructed Regex structure.
- *         Returns NULL if parsing fails.
+ * @return NFA* Pointer to the constructed NFA, or NULL on error.
  */
-Regex* parse_regex(const char* regex_str);
+NFA* parse_regex(const char* regex_str);
 
 #endif
