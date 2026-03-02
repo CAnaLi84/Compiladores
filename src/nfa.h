@@ -1,45 +1,51 @@
 #ifndef NFA_H
 #define NFA_H
 
-#include "regex.h"
-#include <stdlib.h>
 #include <stdbool.h>
-#include <stdio.h>
-#include <string.h>
 
-/** 
- * @struct State    
- * @brief Represents a state in the NFA. Contains an ID, a flag indicating if it's a final state, 
- * and a list of transitions.
+
+/**
+ * @brief Epsilon transition symbol
  */
-typedef struct state State;
+#define EPSILON_SYMBOL '#'
+
+typedef struct State State;
+typedef struct Transition Transition;
 
 /** 
  * @struct Transition
  * @brief Represents a transition in the NFA. Contains the symbol for the transition, 
  * a pointer to the destination state, and a pointer to the next transition in the list.
  */
-typedef struct transition Transition;
+typedef struct Transition{
+    char symbol;              //Símbolo de transición. Epsilon es el caracter '\0'
+    State* to;                //Estado de llegada
+    Transition* next;         //Lista de transiciones desde el mismo estado
+}Transition;
 
-/**
- * @struct Alphabet
- * @brief Represents a symbol in the alphabet of the NFA. Contains the symbol and a
+/** 
+ * @struct State    
+ * @brief Represents a state in the NFA. Contains an ID, a flag indicating if it's a final state, 
+ * a list of transitions from this state, and a pointer to the next state in the list of states.
  */
-typedef struct alphabet {
-    char symbol;
-    struct alphabet* next;
-} Alphabet;
+typedef struct State{
+    int id;
+    bool is_final;
+    Transition* transitions;
+    struct State* next; // Pointer to the next state in the list of states
+}State;
 
 /**
  * @struct NFA
- * @brief Represents a Non-deterministic Finite Automaton (NFA). Contains a pointer to the start state,
- * a list of all states, and a list of symbols in the alphabet.
+ * @brief Represents a Non-deterministic Finite Automaton.
  */
-typedef struct NFA {
-    State* start_state;
-    State** states;
-    size_t state_count;
-    Alphabet* alphabet;
+typedef struct {
+    State* start;        /*Initial state */
+    State* states;       /*Linked list of all states */
 } NFA;
+
+State* new_state(bool is_final);
+void add_transition(State* from, State* to, char symbol);
+void free_nfa(NFA* nfa);
 
 #endif /* NFA_H */
