@@ -11,7 +11,7 @@
 #define OP_PLUS '+'
 #define OP_QUESTION '?'
 
-#define EPSILON_SYMBOL '\0'
+#define EPSILON_SYMBOL '#'
 
 #define LEFT_PAREN '('
 #define RIGHT_PAREN ')'
@@ -105,4 +105,4 @@ char* shunting_yard(const char* input);
  */
 NFA* parse_regex(const char* regex_str);
 
-#endif
+#endif 

@@ -1,5 +1,5 @@
-#include regex.h
-#include nfa.h
+#include "regex.h"
+#include "nfa.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -18,7 +18,7 @@ char* shunting_yard(const char* input);
 static NFA* build_nfa_from_postfix(const char* postfix);
 
 /* Final parser*/
-Regex* parse_regex(const char* regex_str);
+NFA* parse_regex(const char* regex_str);
 
 /*---------------------IMPLEMENTATION------------------*/
 
@@ -54,7 +54,7 @@ Token* tokenize(const char* input, size_t* out_count){
             if(c == ' '){ //skip spaces
                 continue; 
             }
-            if(type == TOKEN_INVALID){ //invalid character
+            if(get_token_type(i) == TOKEN_INVALID){ //invalid character
                 free(tokens);
                 return NULL;
             }
@@ -142,3 +142,91 @@ bool validate_regex(const char* regex) {
     }
     return parentheses_count == 0; //Like count must be zero for balanced parentheses
 }
+
+/*Funtion to convert implicit concatenation into explicit concatenation.
+The rules for implicit concatenation are:
+1. If a character is not an operator and is not a closing parenthesis, it is implicitly concatenated with the previous character.
+2. If a closing parenthesis is followed by a character that is not an operator and not a closing parenthesis, it is implicitly concatenated with the following character.
+3. If an opening parenthesis is followed by a character that is not an operator and not a closing parenthesis, it is implicitly concatenated with the following character.
+4. If an operator is followed by an opening parenthesis, it is implicitly concatenated with the following character.
+5. If an operator is followed by another operator, it is invalid.
+*/
+char* implicit_to_explicit(const char* regex) {
+    if (regex == NULL) {
+        return NULL;
+    }
+    size_t len = strlen(regex);
+    char* result = malloc(len * 2 + 1); //Allocate space for explicit concatenation
+    if (result == NULL) {
+        return NULL;
+    }
+    size_t out_index = 0;
+    for (size_t i = 0; i < len; i++) {
+        char c = regex[i];
+        if (c == LEFT_PAREN || c == OP_UNION || c == OP_QUESTION || c == OP_PLUS || c == OP_STAR) {
+            result[out_index++] = c;
+        } else if (c == RIGHT_PAREN && i > 0 && regex[i-1] != LEFT_PAREN && regex[i-1] != OP_UNION && regex[i-1] != OP_QUESTION && regex[i-1] != OP_PLUS && regex[i-1] != OP_STAR) {
+            result[out_index++] = OP_CONCAT;
+            result[out_index++] = c;
+        } else if (i > 0 && regex[i-1] != LEFT_PAREN && regex[i-1] != OP_UNION && regex[i-1] != OP_QUESTION && regex[i-1] != OP_PLUS && regex[i-1] != OP_STAR && c != RIGHT_PAREN) {
+            result[out_index++] = OP_CONCAT;
+            result[out_index++] = c;
+        } else {
+            result[out_index++] = c;
+        }
+    }
+    result[out_index] = '\0';
+    return result;
+}
+
+/*Function to implements Shunting Yard Algorithm for converting infix to postfix notation*/
+char* shunting_yard(const char* input) {
+    if (input == NULL) {
+        return NULL;
+    }
+    size_t len = strlen(input);
+    char* buffer = malloc(len * 2 + 1); //Allocate space for output empty
+    if (buffer == NULL) {
+        return NULL;
+    }
+    char* stack = malloc(len + 1); //Stack for operators empty
+    if (stack == NULL) {
+        free(buffer);
+        return NULL;
+    }
+    size_t out_index = 0, stack_index = 0;
+    for (size_t i = 0; i < len; i++) {
+        char c = input[i];
+        TokenType type = get_token_type(c); //We have to know the type of the token to know how to handle it
+        if (type == TOKEN_SYMBOL || type == TOKEN_EPSILON) { //If it's an operand, add it to the output
+            buffer[out_index++] = c; //Add symbols directly to output
+        } else if (type == TOKEN_LPAREN) {
+            stack[stack_index++] = c; //Push left parenthesis to stack
+        } else if (type == TOKEN_RPAREN) {
+            while (stack_index > 0 && stack[stack_index - 1] != LEFT_PAREN) {
+                buffer[out_index++] = stack[--stack_index]; //Pop operators to output until left parenthesis is found
+            }
+            if (stack_index > 0 && stack[stack_index - 1] == LEFT_PAREN) {
+                stack_index--; //Pop the left parenthesis from the stack
+            }
+        } else { //Handle operator *, +, ?, ., |
+            while (stack_index > 0 && precedence(get_token_type(stack[stack_index - 1])) >= precedence(type)) {
+                buffer[out_index++] = stack[--stack_index]; // Pop operators with higher or equal precedence to output
+            }
+            stack[stack_index++] = c; // Push current operator to stack
+        }
+    }
+    while (stack_index > 0) {
+        buffer[out_index++] = stack[--stack_index]; // Pop remaining operators to output
+    }
+    buffer[out_index] = '\0';
+    free(stack);
+    return buffer;
+}
+
+/*Funcion to implement Thompson algorithm*/
+static NFA* build_nfa_from_postfix(const char* postfix){
+    
+}
+
+
