@@ -225,8 +225,71 @@ char* shunting_yard(const char* input) {
 }
 
 /*Funcion to implement Thompson algorithm*/
-static NFA* build_nfa_from_postfix(const char* postfix){
-    
+static NFA* build_nfa_from_postfix(const char* postfix) {
+    if (postfix == NULL) {
+        return NULL;
+    }
+    size_t len = strlen(postfix);
+    NFA** stack = malloc(len * sizeof(NFA*)); //Stack for NFAs
+    if (stack == NULL) {
+        return NULL;
+    }
+    size_t stack_index = 0;
+    for (size_t i = 0; i < len; i++) {
+        char c = postfix[i];
+        TokenType type = get_token_type(c);
+        if (type == TOKEN_SYMBOL || type == TOKEN_EPSILON) {
+            NFA* nfa = nfa_symbol(c); //Create an NFA for the symbol
+            if (nfa == NULL) { //Check for allocation failure
+                free(stack);
+                return NULL;
+            }
+            stack[stack_index++] = nfa; //Push the NFA to the stack
+        } else if (type == TOKEN_UNION) {
+            if (stack_index < 2) { //Not enough NFAs on the stack for union
+                free(stack);
+                return NULL;
+            }
+            NFA* nfa2 = stack[--stack_index]; //Pop the top two NFAs from the stack
+            NFA* nfa1 = stack[--stack_index];
+            NFA* nfa = nfa_union(nfa1, nfa2); //Create a new NFA for the union of the two NFAs
+            if (nfa == NULL) { //Check for allocation failure
+                free(stack);
+                return NULL;
+            }
+            stack[stack_index++] = nfa; //Push the new NFA to the stack
+        } else if (type == TOKEN_CONCAT) {
+            if (stack_index < 2) { //Not enough NFAs on the stack for concatenation
+                free(stack);
+                return NULL;
+            }
+            NFA* nfa2 = stack[--stack_index]; //Pop the top two NFAs from the stack
+            NFA* nfa1 = stack[--stack_index];
+            NFA* nfa = nfa_concatenate(nfa1, nfa2); //Create a new NFA for the concatenation of the two NFAs
+            if (nfa == NULL) { //Check for allocation failure
+                free(stack);
+                return NULL;
+            }
+            stack[stack_index++] = nfa; //Push the new NFA to the stack
+        } else if (type == TOKEN_STAR) {
+            if (stack_index < 1) { //Not enough NFAs on the stack for star
+                free(stack);
+                return NULL;    
+            }
+            NFA* nfa1 = stack[--stack_index]; //Pop the top NFA from the stack
+            NFA* nfa = nfa_star(nfa1); //Create a new NFA for the star of the popped NFA
+            if (nfa == NULL) { //Check for allocation failure
+                free(stack);
+                return NULL;
+            }
+            stack[stack_index++] = nfa; //Push the new NFA to the stack
+        }
+    }
+    if (stack_index != 1) { //If there is not exactly one NFA on the stack, return NULL
+        free(stack);
+        return NULL;
+    }
+    NFA* result = stack[0];
+    free(stack);
+    return result;
 }
-
-
